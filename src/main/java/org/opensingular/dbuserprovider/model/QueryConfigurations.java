@@ -5,18 +5,20 @@ import org.opensingular.dbuserprovider.persistence.RDBMS;
 public class QueryConfigurations {
 
     private String count;
+    private String addUser;
     private String listAll;
     private String findById;
     private String findByUsername;
     private String findBySearchTerm;
     private String findPasswordHash;
     private String hashFunction;
-    private RDBMS  RDBMS;
+    private RDBMS RDBMS;
     private boolean allowKeycloakDelete;
     private boolean allowDatabaseToOverwriteKeycloak;
 
-    public QueryConfigurations(String count, String listAll, String findById, String findByUsername, String findBySearchTerm, String findPasswordHash, String hashFunction, RDBMS RDBMS, boolean allowKeycloakDelete, boolean allowDatabaseToOverwriteKeycloak) {
+    public QueryConfigurations(String count, String addUser, String listAll, String findById, String findByUsername, String findBySearchTerm, String findPasswordHash, String hashFunction, RDBMS RDBMS, boolean allowKeycloakDelete, boolean allowDatabaseToOverwriteKeycloak) {
         this.count = count;
+        this.addUser = addUser;
         this.listAll = listAll;
         this.findById = findById;
         this.findByUsername = findByUsername;
@@ -34,6 +36,10 @@ public class QueryConfigurations {
 
     public String getCount() {
         return count;
+    }
+
+    public String getAddUser() {
+        return addUser;
     }
 
     public String getListAll() {

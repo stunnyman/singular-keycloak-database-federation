@@ -20,10 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Function;
-import java.util.Base64;
-import java.util.Arrays;
-import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
+
 
 @JBossLog
 public class UserRepository {
@@ -151,30 +148,23 @@ public class UserRepository {
         } else {
             String hashFunction = queryConfigurations.getHashFunction();
 
-            if (hashFunction.equals("PBKDF2-SHA256")) {
+            if(hashFunction.equals("PBKDF2-SHA256")){
                 String[] components = hash.split("\\$");
                 return new PBKDF2SHA256HashingUtil(password, components[2], Integer.valueOf(components[1])).validatePassword(components[3]);
-            } else if (hashFunction.equals("SHA-1")) {
-                if (hash != null && hash.startsWith("{SHA}")) {
-                    hash = hash.substring(5);
-                }
-                try {
-                    MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-                    byte[] inputDigest = sha1.digest(password.getBytes(StandardCharsets.UTF_8));
-                    String inputBase64 = Base64.getEncoder().encodeToString(inputDigest);
-                    return inputBase64.equals(hash);
-                } catch (NoSuchAlgorithmException ex) {
-                    throw new RuntimeException("Error while hashing password", ex);
-                }
             }
+
             MessageDigest digest   = DigestUtils.getDigest(hashFunction);
-            byte[] pwdBytes = StringUtils.getBytesUtf8(password);
+            byte[]        pwdBytes = StringUtils.getBytesUtf8(password);
             return Objects.equals(Hex.encodeHexString(digest.digest(pwdBytes)), hash);
         }
     }
     
     public boolean updateCredentials(String username, String password) {
         throw new NotImplementedException("Password update not supported");
+    }
+
+    public String addUser(String username) {
+        return doQuery(queryConfigurations.getAddUser(), null, this::readString, username);
     }
     
     public boolean removeUser() {

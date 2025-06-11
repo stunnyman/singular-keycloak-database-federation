@@ -21,7 +21,7 @@ import java.util.Map;
 @JBossLog
 @AutoService(UserStorageProviderFactory.class)
 public class DBUserStorageProviderFactory implements UserStorageProviderFactory<DBUserStorageProvider> {
-    
+
     private static final String PARAMETER_PLACEHOLDER_HELP = "Use '?' as parameter placeholder character (replaced only once). ";
     private static final String DEFAULT_HELP_TEXT          = "Select to query all users you must return at least: \"id\". " +
                                                              "            \"username\"," +
@@ -29,27 +29,27 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
                                                              "            \"firstName\" (optional)," +
                                                              "            \"lastName\" (optional). Any other parameter can be mapped by aliases to a realm scope";
     private static final String PARAMETER_HELP             = " The %s is passed as query parameter.";
-    
-    
+
+
     private Map<String, ProviderConfig> providerConfigPerInstance = new HashMap<>();
-    
+
     @Override
     public void init(Config.Scope config) {
     }
-    
+
     @Override
     public void close() {
         for (Map.Entry<String, ProviderConfig> pc : providerConfigPerInstance.entrySet()) {
             pc.getValue().dataSourceProvider.close();
         }
     }
-    
+
     @Override
     public DBUserStorageProvider create(KeycloakSession session, ComponentModel model) {
         ProviderConfig providerConfig = providerConfigPerInstance.computeIfAbsent(model.getId(), s -> configure(model));
         return new DBUserStorageProvider(session, model, providerConfig.dataSourceProvider, providerConfig.queryConfigurations);
     }
-    
+
     private synchronized ProviderConfig configure(ComponentModel model) {
         log.infov("Creating configuration for model: id={0} name={1}", model.getId(), model.getName());
         ProviderConfig providerConfig = new ProviderConfig();
@@ -60,6 +60,7 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
         providerConfig.dataSourceProvider.configure(url, rdbms, user, password, model.getName());
         providerConfig.queryConfigurations = new QueryConfigurations(
                 model.get("count"),
+                model.get("addUser"),
                 model.get("listAll"),
                 model.get("findById"),
                 model.get("findByUsername"),
@@ -72,7 +73,7 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
         );
         return providerConfig;
     }
-    
+
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         try {
@@ -84,12 +85,12 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
             throw new ComponentValidationException(e.getMessage(), e);
         }
     }
-    
+
     @Override
     public String getId() {
         return "singular-db-user-provider";
     }
-    
+
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return ProviderConfigurationBuilder.create()
@@ -138,9 +139,9 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
                                            .type(ProviderConfigProperty.BOOLEAN_TYPE)
                                            .defaultValue("false")
                                            .add()
-        
+
                                            //QUERIES
-        
+
                                            .property()
                                            .name("count")
                                            .label("User count SQL query")
@@ -148,7 +149,19 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
                                            .type(ProviderConfigProperty.STRING_TYPE)
                                            .defaultValue("select count(*) from users")
                                            .add()
-        
+
+                .property()
+                .name("addUser")
+                .label("User register SQL query")
+                .helpText("SQL query save the registered user")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .defaultValue(
+                        "INSERT INTO usr ( timezone,lang,datefmt ,decfmt,timefmt,curr,lunit ,wunit,fax,lidorg,category,mobile,phone,phonety,weightgr,heightcm,lati,longi,streetno,street,url,zip,city,title,email,ty,note,salutation,country,birthday,firstna,lastna,area,lm,pw,activat,premium,company)\n" +
+                        "VALUES ('','uk','','','','','','','',-1,'','','','',0,0,0.0,0.0,'','','','','','', ?,-1,'',-1,'',NULL,'','','','2025-06-06 09:37:23.32','{SHA}nU4eI71bcnBGqeO0t9tXvY1u5oQ=','0','0','');\n" +
+                        "SELECT LAST_INSERT_ID();"
+                )
+                .add()
+
                                            .property()
                                            .name("listAll")
                                            .label("List All Users SQL query")
@@ -162,7 +175,7 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
                                                          "            \"cpf\"," +
                                                          "            \"fullName\" from users ")
                                            .add()
-        
+
                                            .property()
                                            .name("findById")
                                            .label("Find user by id SQL query")
@@ -176,7 +189,7 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
                                                          "            \"cpf\"," +
                                                          "            \"fullName\" from users where \"id\" = ? ")
                                            .add()
-        
+
                                            .property()
                                            .name("findByUsername")
                                            .label("Find user by username SQL query")
@@ -190,7 +203,7 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
                                                          "            \"cpf\"," +
                                                          "            \"fullName\" from users where \"username\" = ? ")
                                            .add()
-        
+
                                            .property()
                                            .name("findBySearchTerm")
                                            .label("Find user by search term SQL query")
@@ -204,7 +217,7 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
                                                          "            \"cpf\"," +
                                                          "            \"fullName\" from users where upper(\"username\") like (?)  or upper(\"email\") like (?) or upper(\"fullName\") like (?)")
                                            .add()
-        
+
                                            .property()
                                            .name("findPasswordHash")
                                            .label("Find password hash (blowfish or hash digest hex) SQL query")
@@ -222,11 +235,11 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
                                            .add()
                                            .build();
     }
-    
+
     private static class ProviderConfig {
         private DataSourceProvider  dataSourceProvider = new DataSourceProvider();
         private QueryConfigurations queryConfigurations;
     }
-    
-    
+
+
 }

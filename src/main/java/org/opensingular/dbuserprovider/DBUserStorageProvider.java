@@ -19,10 +19,7 @@ import org.opensingular.dbuserprovider.persistence.DataSourceProvider;
 import org.opensingular.dbuserprovider.persistence.UserRepository;
 import org.opensingular.dbuserprovider.util.PagingUtil;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @JBossLog
@@ -46,7 +43,7 @@ public class DBUserStorageProvider implements UserStorageProvider,
         return users.stream()
                     .map(m -> new UserAdapter(session, realm, model, m, allowDatabaseToOverwriteKeycloak)).collect(Collectors.toList());
     }
-    
+
     
     @Override
     public boolean supportsCredentialType(String credentialType) {
@@ -262,9 +259,12 @@ public class DBUserStorageProvider implements UserStorageProvider,
     @Override
     public UserModel addUser(RealmModel realm, String username) {
         // from documentation: "If your provider has a configuration switch to turn off adding a user, returning null from this method will skip the provider and call the next one."
-        return null;
+        String insertedId = repository.addUser(username);
+        HashMap<String, String> map = new HashMap<>();
+        map.put("id", insertedId);
+        map.put("username", username);
+        return new UserAdapter(session, realm, model, map, allowDatabaseToOverwriteKeycloak);
     }
-    
     
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
